@@ -23,7 +23,7 @@ class AccountMove(models.Model):
             not config["test_enable"]
             or (
                 config["test_enable"]
-                and self._context.get("force_check_currecy", False)
+                and self._context.get("force_check_currency", False)
             )
         ) and self.filtered(
             lambda a: a.pricelist_id
@@ -47,6 +47,12 @@ class AccountMove(models.Model):
         res = super()._compute_currency_id()
         for invoice in self:
             if (
+                not config["test_enable"]
+                or (
+                    config["test_enable"]
+                    and self._context.get("force_compute_currency", False)
+                )
+            ) and (
                 invoice.is_sale_document()
                 and invoice.pricelist_id
                 and invoice.currency_id != invoice.pricelist_id.currency_id
@@ -75,7 +81,9 @@ class AccountMoveLine(models.Model):
         return res
 
     def _calculate_discount(self, base_price, final_price):
-        discount = (base_price - final_price) / base_price * 100
+        discount = 0.0
+        if base_price > 0.0:
+            discount = (base_price - final_price) / base_price * 100
         if (discount < 0 and base_price > 0) or (discount > 0 and base_price < 0):
             discount = 0.0
         return discount
